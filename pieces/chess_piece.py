@@ -13,8 +13,8 @@ class PlayerColor(Enum):
     
 
 class ChessPiece:
-    def __init__(self, color: "PlayerColor", position: Position):
-        self.color: "PlayerColor" = color
+    def __init__(self, color: PlayerColor, position: Position):
+        self.color: PlayerColor = color
         self.position: Position = position
 
     def get_possible_moves(self, board: "ChessBoard") -> list[Position]:
