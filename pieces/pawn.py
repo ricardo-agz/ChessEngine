@@ -1,6 +1,7 @@
 from typing import TYPE_CHECKING
 
 from pieces.chess_piece import ChessPiece, PlayerColor
+from util import position_to_string
 
 if TYPE_CHECKING:
     from chess_board import ChessBoard
@@ -51,3 +52,7 @@ class Pawn(ChessPiece):
                     moves.append((row + 1, col + 1))
 
         return moves
+
+    def __str__(self):
+        return f"<{self.color.value.title()} Pawn at {position_to_string(self.position)}>"
+        

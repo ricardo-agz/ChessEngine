@@ -1,6 +1,7 @@
 from typing import TYPE_CHECKING
 
 from pieces.chess_piece import ChessPiece, PlayerColor
+from util import position_to_string
 
 if TYPE_CHECKING:
     from chess_board import ChessBoard
@@ -41,3 +42,7 @@ class Bishop(ChessPiece):
         valid_moves = [move for move in moves if 0 <= move[0] < 8 and 0 <= move[1] < 8]
 
         return valid_moves
+
+    def __str__(self):
+        return f"<{self.color.value.title()} Bishop at {position_to_string(self.position)}>"
+        

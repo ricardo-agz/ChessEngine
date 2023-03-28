@@ -1,5 +1,4 @@
 from copy import deepcopy
-from enum import Enum
 from typing import Optional
 
 from pieces import ChessPiece, PlayerColor, Rook, Knight, Bishop, King, Queen, Pawn
@@ -8,9 +7,12 @@ Position = tuple[int, int]
 
 
 class ChessBoard:
-    def __init__(self):
-        self.board = self.create_empty_board()
-        self.place_pieces()
+    def __init__(self, board_state: list[list[Optional[ChessPiece]]] = None):
+        if board_state is None:
+            self.board = self.create_empty_board()
+            self.place_pieces()
+        else:
+            self.board = board_state
 
     def create_empty_board(self) -> list[list[Optional[ChessPiece]]]:
         """Create an empty 8x8 chess board"""
@@ -41,31 +43,6 @@ class ChessBoard:
         piece = self.get_piece(position)
         return piece is not None and piece.color != color
 
-    def move_piece(self, piece: ChessPiece, new_position: Position):
-        """
-        Moves a piece on the board
-        """
-        color = piece.color
-        valid_moves_with_pieces = self.get_possible_moves(color)
-
-        # Get the list of valid moves for the specific piece
-        valid_moves = []
-        for piece_and_moves in valid_moves_with_pieces:
-            current_piece, moves = piece_and_moves
-            if current_piece == piece:
-                valid_moves = moves
-                break
-
-        if new_position not in valid_moves:
-            raise ValueError("Invalid move")
-
-        old_row, old_col = piece.position
-        new_row, new_col = new_position
-
-        self.board[old_row][old_col] = None
-        self.board[new_row][new_col] = piece
-        piece.position = new_position
-
     def get_piece(self, position: Position) -> Optional[ChessPiece]:
         """
         Returns the piece at a given board position
@@ -86,6 +63,23 @@ class ChessBoard:
 
         return pieces
 
+    def is_move_valid(self, piece: ChessPiece, new_position: Position) -> bool:
+        """
+        Checks if a move is valid by creating a copy of the board, making the move,
+        and checking if the king is in check after the move.
+        """
+        color = piece.color
+
+        # Create a copy of the board and make the move
+        board_copy = deepcopy(self)
+        old_row, old_col = piece.position
+        new_row, new_col = new_position
+        board_copy.board[old_row][old_col] = None
+        board_copy.board[new_row][new_col] = piece
+
+        # Check if the king is in check after the move
+        return not board_copy.is_king_in_check(color)
+
     def get_possible_moves(self, color: PlayerColor) -> list[tuple[ChessPiece, list[Position]]]:
         """
         Returns a list of all pieces and their possible moves on the board for a given player
@@ -95,20 +89,50 @@ class ChessBoard:
 
         for piece in pieces:
             possible_moves = piece.get_possible_moves(self)
-            valid_piece_moves = []
-
-            for move in possible_moves:
-                # Create a copy of the board and make the move
-                board_copy = deepcopy(self)
-                board_copy.move_piece(piece, move)
-
-                # Check if the king is in check after the move
-                if not board_copy.is_king_in_check(color):
-                    valid_piece_moves.append(move)
-
+            valid_piece_moves = [move for move in possible_moves if self.is_move_valid(piece, move)]
             valid_moves.append((piece, valid_piece_moves))
 
         return valid_moves
+
+    def move_piece(self, piece: ChessPiece, new_position: Position) -> bool:
+        """
+        Moves a piece on the board, returns False if invalid move
+        """
+        color = piece.color
+        valid_moves_with_pieces = self.get_possible_moves(color)
+
+        # Get the list of valid moves for the specific piece
+        valid_moves = []
+        for curr_piece, possible_moves in valid_moves_with_pieces:
+            if curr_piece.position == piece.position:
+                valid_moves = possible_moves
+                break
+
+        if new_position not in valid_moves:
+            return False
+
+        old_row, old_col = piece.position
+        new_row, new_col = new_position
+
+        self.board[old_row][old_col] = None
+        self.board[new_row][new_col] = piece
+        piece.position = new_position
+
+        return True
+
+    def get_opponent_possible_moves_without_check(self, color: PlayerColor) -> list[Position]:
+        """
+        Returns a list of all possible moves for the opponent without checking for check.
+        """
+        opponent_color = PlayerColor.WHITE if color == PlayerColor.BLACK else PlayerColor.BLACK
+        opponent_pieces = self.get_pieces(opponent_color)
+        opponent_possible_moves = []
+
+        for piece in opponent_pieces:
+            possible_moves = piece.get_possible_moves(self)
+            opponent_possible_moves.extend(possible_moves)
+
+        return opponent_possible_moves
 
     def is_king_in_check(self, color: PlayerColor) -> bool:
         """
@@ -124,8 +148,7 @@ class ChessBoard:
             if king_position:
                 break
 
-        opponent_color = PlayerColor.WHITE if color == PlayerColor.BLACK else PlayerColor.BLACK
-        opponent_possible_moves = self.get_possible_moves(opponent_color)
+        opponent_possible_moves = self.get_opponent_possible_moves_without_check(color)
         return king_position in opponent_possible_moves
 
     def is_checkmate(self, color: PlayerColor) -> bool:
@@ -135,18 +158,24 @@ class ChessBoard:
         if not self.is_king_in_check(color):
             return False
 
-        possible_moves = self.get_possible_moves(color)
-        for move in possible_moves:
+        possible_moves_per_piece = self.get_possible_moves(color)
+        for curr_piece, possible_moves in possible_moves_per_piece:
             # Create a copy of the board and make the move
-            board_copy = deepcopy(self)
-            piece = board_copy.get_piece(move[0])
-            board_copy.move_piece(piece, move[1])
+            for move in possible_moves:
+                board_copy = deepcopy(self)
+                piece_copy = deepcopy(curr_piece)
+                
+                # Try the move and continue to the next move if it is invalid
+                move_result = board_copy.move_piece(piece_copy, move)
+                if not move_result:
+                    continue
 
-            # Check if the king is still in check after the move
-            if not board_copy.is_king_in_check(color):
-                return False
+                # Check if the king is still in check after the move
+                if not board_copy.is_king_in_check(color):
+                    return False
 
         return True
+
 
     def is_stalemate(self, color: PlayerColor) -> bool:
         """
@@ -155,15 +184,20 @@ class ChessBoard:
         if self.is_king_in_check(color):
             return False
 
-        possible_moves = self.get_possible_moves(color)
-        for move in possible_moves:
+        possible_moves_per_piece = self.get_possible_moves(color)
+        for curr_piece, possible_moves in possible_moves_per_piece:
             # Create a copy of the board and make the move
-            board_copy = deepcopy(self)
-            piece = board_copy.get_piece(move[0])
-            board_copy.move_piece(piece, move[1])
+            for move in possible_moves:
+                board_copy = deepcopy(self)
+                piece_copy = deepcopy(curr_piece)
+                
+                # Try the move and continue to the next move if it is invalid
+                move_result = board_copy.move_piece(piece_copy, move)
+                if not move_result:
+                    continue
 
-            # Check if the king is in check after the move
-            if not board_copy.is_king_in_check(color):
-                return False
+                # Check if the king is still in check after the move
+                if not board_copy.is_king_in_check(color):
+                    return False
 
         return True

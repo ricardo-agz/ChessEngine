@@ -1,6 +1,7 @@
 from typing import TYPE_CHECKING
 
 from pieces.chess_piece import ChessPiece, PlayerColor
+from util import position_to_string
 
 if TYPE_CHECKING:
     from chess_board import ChessBoard
@@ -57,3 +58,6 @@ class Queen(ChessPiece):
                         break # self blocking piece
 
         return moves
+
+    def __str__(self):
+        return f"<{self.color.value.title()} Queen at {position_to_string(self.position)}>"
