@@ -1,4 +1,5 @@
 import tkinter as tk
+from PIL import ImageTk, Image  # pip install pillow
 from typing import Optional
 from chess_board import ChessBoard, Position
 from pieces.chess_piece import PlayerColor
@@ -16,6 +17,23 @@ class ChessGUI(tk.Tk):
 
         self.canvas.bind("<Button-1>", self.on_tile_click)
 
+        # load piece images
+        self.white_pieces = {
+            "Pawn": ImageTk.PhotoImage(Image.open("images/white_pieces/pawn.png")),
+            "Rook": ImageTk.PhotoImage(Image.open("images/white_pieces/rook.png")),
+            "Knight": ImageTk.PhotoImage(Image.open("images/white_pieces/knight.png")),
+            "Bishop": ImageTk.PhotoImage(Image.open("images/white_pieces/bishop.png")),
+            "Queen": ImageTk.PhotoImage(Image.open("images/white_pieces/queen.png")),
+            "King": ImageTk.PhotoImage(Image.open("images/white_pieces/king.png")),
+        }
+        self.black_pieces = {
+            "Pawn": ImageTk.PhotoImage(Image.open("images/black_pieces/pawn.png")),
+            "Rook": ImageTk.PhotoImage(Image.open("images/black_pieces/rook.png")),
+            "Knight": ImageTk.PhotoImage(Image.open("images/black_pieces/knight.png")),
+            "Bishop": ImageTk.PhotoImage(Image.open("images/black_pieces/bishop.png")),
+            "Queen": ImageTk.PhotoImage(Image.open("images/black_pieces/queen.png")),
+            "King": ImageTk.PhotoImage(Image.open("images/black_pieces/king.png")),
+        }
         self.draw_board()
         self.place_pieces()
 
@@ -49,7 +67,7 @@ class ChessGUI(tk.Tk):
             for col in range(8):
                 x1, y1 = col * 80, row * 80
                 x2, y2 = x1 + 80, y1 + 80
-                color = "white" if (row + col) % 2 == 0 else "gray"
+                color = "lemon chiffon" if (row + col) % 2 == 0 else "sienna4"
                 self.canvas.create_rectangle(x1, y1, x2, y2, fill=color)
 
     def on_tile_click(self, event):
@@ -75,6 +93,7 @@ class ChessGUI(tk.Tk):
                     self.refresh_board()
                     self.switch_player()
                 else:
+                    # Invalid move
                     self.highlight_square(row, col, "red")
 
     def place_pieces(self):
@@ -86,29 +105,18 @@ class ChessGUI(tk.Tk):
             "Queen": "Q",
             "King": "K",
         }
-
         for row in range(8):
             for col in range(8):
                 piece = self.board.get_piece((row, col))
                 if piece:
-                    piece_label = piece_labels[piece.__class__.__name__]
-                    color = piece.color.value.lower()
-                    # bg
-                    self.canvas.create_text(
-                        col * 80 + 42,
-                        row * 80 + 42,
-                        text=piece_label,
-                        font=("Arial", 24),
-                        fill="black",
-                        tags=("piece", f"{row},{col}"),
-                    )
-                    # fg
-                    self.canvas.create_text(
+                    if piece.color == PlayerColor.WHITE:
+                        piece_image = self.white_pieces[piece.__class__.__name__]
+                    else:
+                        piece_image = self.black_pieces[piece.__class__.__name__]
+                    self.canvas.create_image(
                         col * 80 + 40,
                         row * 80 + 40,
-                        text=piece_label,
-                        font=("Arial", 24),
-                        fill=color,
+                        image=piece_image,
                         tags=("piece", f"{row},{col}"),
                     )
 
