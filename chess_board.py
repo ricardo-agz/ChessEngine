@@ -201,3 +201,28 @@ class ChessBoard:
                     return False
 
         return True
+
+
+    # Game Score Function
+    def evaluation_function(self):
+        '''
+        This function will return a score for the current board state
+        If white is winning it would return a positive number, if black is winning negative.
+        If either side is in checkmate it will return inf or -inf
+        '''
+        if self.is_checkmate(PlayerColor.WHITE):
+            return float("infinity")
+        elif self.is_checkmate(PlayerColor.BLACK):
+            return -float("infinity")
+        else:
+            score = 0
+            for row in range(8):
+                for col in range(8):
+                    piece = self.get_piece((row, col))
+                    if piece:
+                        if piece.color == 'WHITE':
+                            score += piece.value
+
+                        else:
+                            score -= piece.value
+            return score
