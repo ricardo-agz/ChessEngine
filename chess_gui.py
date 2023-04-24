@@ -1,8 +1,10 @@
 import tkinter as tk
+import threading
 from PIL import ImageTk, Image  # pip install pillow
 from typing import Optional
 from chess_board import ChessBoard, Position
 from pieces.chess_piece import PlayerColor
+from engine import minimax, get_best_move
 
 class ChessGUI(tk.Tk):
     def __init__(self, board: ChessBoard):
@@ -71,40 +73,48 @@ class ChessGUI(tk.Tk):
                 self.canvas.create_rectangle(x1, y1, x2, y2, fill=color)
 
     def on_tile_click(self, event):
-        col, row = event.x // 80, event.y // 80
-        clicked_position = (row, col)
-        clicked_piece = self.board.get_piece(clicked_position)
+        if self.current_player == PlayerColor.WHITE:
+            col, row = event.x // 80, event.y // 80
+            clicked_position = (row, col)
+            clicked_piece = self.board.get_piece(clicked_position)
 
-        if not self.selected_piece:
-            if clicked_piece and clicked_piece.color == self.current_player:
-                self.selected_piece = clicked_piece
-                self.highlight_square(row, col, "blue")
-        else:
-            if clicked_piece and clicked_piece.color == self.selected_piece.color:
-                # Deselect the previously selected piece and select the new piece
-                self.remove_square_highlight(self.selected_piece.position[0], self.selected_piece.position[1])
-                self.selected_piece = clicked_piece
-                self.highlight_square(row, col, "blue")
+            if not self.selected_piece:
+                if clicked_piece and clicked_piece.color == self.current_player:
+                    self.selected_piece = clicked_piece
+                    self.highlight_square(row, col, "blue")
             else:
-                valid_move = self.board.move_piece(self.selected_piece, clicked_position)
-                if valid_move:
+                if clicked_piece and clicked_piece.color == self.selected_piece.color:
+                    # Deselect the previously selected piece and select the new piece
                     self.remove_square_highlight(self.selected_piece.position[0], self.selected_piece.position[1])
-                    self.selected_piece = None
-                    self.refresh_board()
-                    self.switch_player()
+                    self.selected_piece = clicked_piece
+                    self.highlight_square(row, col, "blue")
                 else:
-                    # Invalid move
-                    self.highlight_square(row, col, "red")
+                    valid_move = self.board.move_piece(self.selected_piece, clicked_position)
+                    if valid_move:
+                        self.remove_square_highlight(self.selected_piece.position[0], self.selected_piece.position[1])
+                        self.selected_piece = None
+                        self.refresh_board()
+                        self.switch_player()
+
+                        if self.current_player == PlayerColor.BLACK:
+                            threading.Thread(target=self.play_black_move).start()
+                    else:
+                        # Invalid move
+                        self.highlight_square(row, col, "red")
+
+    def play_black_move(self):
+        print("getting black move...")
+        best_piece, best_move = get_best_move(self.board, 2, PlayerColor.BLACK)
+        print(f"best move: {best_piece}, {best_move}")
+        if best_move:
+            self.board.move_piece(best_piece, best_move)
+            self.window.after(0, self.refresh_board_and_switch_player)
+
+    def refresh_board_and_switch_player(self):
+        self.refresh_board()
+        self.switch_player()
 
     def place_pieces(self):
-        piece_labels = {
-            "Pawn": "P",
-            "Rook": "R",
-            "Knight": "N",
-            "Bishop": "B",
-            "Queen": "Q",
-            "King": "K",
-        }
         for row in range(8):
             for col in range(8):
                 piece = self.board.get_piece((row, col))

@@ -19,30 +19,28 @@ class Bishop(ChessPiece):
 
         row, col = self.position
 
-        # Diagonal moves
-        for i in range(1, 8):
-            directions = [
-                (row + i, col + i), # Down-right
-                (row + i, col - i), # Down-left
-                (row - i, col + i), # Up-right
-                (row - i, col - i)  # Up-left
-            ]
+        # Define direction vectors
+        directions = [
+            (1, 1), (1, -1), (-1, 1), (-1, -1)   # Diagonal
+        ]
 
-            for new_row, new_col in directions:
+        # Iterate through directions
+        for dr, dc in directions:
+            for i in range(1, 8):
+                new_row, new_col = row + dr * i, col + dc * i
+
                 if 0 <= new_row < 8 and 0 <= new_col < 8:
                     if board.is_square_empty((new_row, new_col)):
                         moves.append((new_row, new_col))
                     elif board.is_opponent_piece(self.color, (new_row, new_col)):
                         moves.append((new_row, new_col))
-                        break # blocking piece
+                        break
                     else:
-                        break # self blocking piece
+                        break
+                else:
+                    break
 
-        # Remove moves that are outside the board
-        valid_moves = [move for move in moves if 0 <= move[0] < 8 and 0 <= move[1] < 8]
-
-        return valid_moves
+        return moves
 
     def __str__(self):
         return f"<{self.color.value.title()} Bishop at {position_to_string(self.position)}>"
-        

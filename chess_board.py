@@ -2,6 +2,7 @@ from copy import deepcopy
 from typing import Optional
 
 from pieces import ChessPiece, PlayerColor, Rook, Knight, Bishop, King, Queen, Pawn
+from piece_square_tables import pst_pawn, pst_knight, pst_bishop, pst_king, pst_rook, pst_queen
 
 Position = tuple[int, int]
 
@@ -109,6 +110,7 @@ class ChessBoard:
                 break
 
         if new_position not in valid_moves:
+            print("Illegal move:/")
             return False
 
         old_row, old_col = piece.position
@@ -211,18 +213,48 @@ class ChessBoard:
         If either side is in checkmate it will return inf or -inf
         '''
         if self.is_checkmate(PlayerColor.WHITE):
+            print("i have been checkmated by a robot...")
             return float("infinity")
         elif self.is_checkmate(PlayerColor.BLACK):
+            print("checkmate bitch")
             return -float("infinity")
         else:
             score = 0
+            print(f"init score: {score}")
             for row in range(8):
                 for col in range(8):
                     piece = self.get_piece((row, col))
-                    if piece:
-                        if piece.color == 'WHITE':
+                    if piece is not None:
+                        if piece.color == PlayerColor.WHITE:
                             score += piece.value
-
+                            print(f"added value score: {score}")
+                            if isinstance(piece, Pawn):
+                                score += pst_pawn[row][col]
+                            elif isinstance(piece, Knight):
+                                score += pst_knight[row][col]
+                            elif isinstance(piece, Bishop):
+                                score += pst_bishop[row][col]
+                            elif isinstance(piece, Rook):
+                                score += pst_rook[row][col]
+                            elif isinstance(piece, Queen):
+                                score += pst_queen[row][col]
+                            elif isinstance(piece, King):
+                                score += pst_king[row][col]
                         else:
                             score -= piece.value
-            return score
+                            print(f"minus value score: {score}")
+                            if isinstance(piece, Pawn):
+                                score -= pst_pawn[7-row][col]
+                            elif isinstance(piece, Knight):
+                                score -= pst_knight[7-row][col]
+                            elif isinstance(piece, Bishop):
+                                score -= pst_bishop[7-row][col]
+                            elif isinstance(piece, Rook):
+                                score -= pst_rook[7-row][col]
+                            elif isinstance(piece, Queen):
+                                score -= pst_queen[7-row][col]
+                            elif isinstance(piece, King):
+                                score -= pst_king[7-row][col]
+
+        print(f"evaluation score: {score}")
+        return score

@@ -12,7 +12,7 @@ Position = tuple[int, int]
 class King(ChessPiece):
     def __init__(self, color: PlayerColor, position: Position):
         super().__init__(color, position)
-        self.value = float("infinity")
+        self.value = 0
 
     def get_possible_moves(self, board: "ChessBoard") -> list[Position]:
         moves = []
