@@ -5,6 +5,7 @@ import time
 
 from chess_board import ChessBoard, Position
 from pieces.chess_piece import ChessPiece, PlayerColor
+
 from util import string_to_position, position_to_string
 
 
@@ -18,7 +19,7 @@ def minimax(
         cache: Optional[dict[str, tuple[Optional[ChessPiece], Optional[Position], int]]] = None,
         start_time: time = None,
         time_limit: time = None,
-        lmr_move_count: int = 50,
+        lmr_move_count: int = 100,
     ) -> Tuple[Optional[ChessPiece], Optional[Position], int]:
     """
     Minimax algorithm with alpha-beta pruning for the chess AI
@@ -76,7 +77,7 @@ def minimax(
             new_board.move_piece(new_piece, move)
             
             # Late Move Reductions
-            reduction = 1 if move_num <= lmr_move_count else 3
+            reduction = 1 if move_num <= lmr_move_count else 2
             _, _, score = minimax(
                 board_state=new_board, 
                 depth=depth - reduction, 
@@ -88,8 +89,9 @@ def minimax(
                 start_time=start_time, 
                 time_limit=time_limit)
             
-            if reduction == 3 and score > alpha:
-                piece, move, score = minimax(
+            if reduction == 2 and score > alpha:
+                print('Late Move Reduction: Late Move is Good, doing full depth search')
+                _, _, score = minimax(
                 board_state=new_board, 
                 depth=depth - 1, 
                 maximizing_player=False, 
@@ -129,7 +131,7 @@ def minimax(
             new_board.move_piece(new_piece, move)
 
             # Late Move Reductions
-            reduction = 1 if move_num <= lmr_move_count else 3
+            reduction = 1 if move_num <= lmr_move_count else 2
             _, _, score = minimax(
                 board_state=new_board, 
                 depth=depth - reduction, 
@@ -141,8 +143,9 @@ def minimax(
                 start_time=start_time, 
                 time_limit=time_limit)
             
-            if reduction == 3 and score < beta:
-                piece, move, score = minimax(
+            if reduction == 2 and score < beta:
+                print('Late Move Reduction: Late Move is Good, doing full depth search')
+                _, _, score = minimax(
                 board_state=new_board, 
                 depth=depth - 1, 
                 maximizing_player=True, 
@@ -258,10 +261,14 @@ def move_score(move: Tuple[ChessPiece, Position], board_state: ChessBoard) -> in
     target_piece = board_state.get_piece(target_position)
 
     score = 0
-
+    see_score = 0
     # capture moves given priority based on relative value
     if target_piece is not None and target_piece.color != piece.color:
-        score += (target_piece.value - piece.value) * 100
+        # what should multiplier be?
+        see_score = static_exchange_evaluation(board_state, (piece, target_position)) * 100
+        score += see_score
+        print(score)
+        # score += (target_piece.value - piece.value) * 50
 
     new_board = deepcopy(board_state)
     new_piece = deepcopy(piece)
@@ -284,6 +291,7 @@ def move_score(move: Tuple[ChessPiece, Position], board_state: ChessBoard) -> in
     if piece.color == PlayerColor.BLACK:
         score = -score
     score += new_board.evaluation_function()
+    print(f'See score:{see_score} and score:{score}')
     return score
 
 
@@ -310,3 +318,67 @@ def get_best_move(board_state: ChessBoard, color: PlayerColor, max_depth: int = 
 
     return piece, move
 
+
+
+def static_exchange_evaluation(board_state: ChessBoard, move: Tuple[ChessPiece, Position]) -> int:
+    """
+    This function performs Static Exchange Evaluation (SEE) on a given move.
+    
+    Args:
+        board_state (ChessBoard): The current state of the chess board.
+        move (Tuple[ChessPiece, Position]): The move to be evaluated.
+        
+    Returns:
+        int: The SEE score for the given move.
+    """
+    piece, target_position = move
+    attacker_color = piece.color
+    opponent_color = PlayerColor.WHITE if attacker_color == PlayerColor.BLACK else PlayerColor.BLACK
+
+    # Get the target piece, and return 0 if there is no target piece
+    target_piece = board_state.get_piece(target_position)
+    if target_piece is None or target_piece.color == attacker_color:
+        return 0
+
+    # Initialize the attackers and the gains array
+    attackers = {color: [] for color in [attacker_color, opponent_color]}
+    gains = [0] * 32
+    gains[0] = target_piece.value
+
+    # Find all attacking pieces for both sides
+    for row in range(8):
+        for col in range(8):
+            attacking_piece = board_state.get_piece((row, col))
+            if attacking_piece is not None and attacking_piece.color in [attacker_color, opponent_color]:
+                if target_position in attacking_piece.get_possible_moves(board_state):
+                    attackers[attacking_piece.color].append((attacking_piece, attacking_piece.value))
+
+
+    # Sort the attackers by the piece values
+    for color in [attacker_color, opponent_color]:
+        attackers[color].sort(key=lambda x: x[1])
+
+    current_attacker_color = attacker_color
+    current_depth = 1
+
+    while True:
+        # If no attackers are left for the current side, break the loop
+        if not attackers[current_attacker_color]:
+            break
+
+        # Get the next attacker
+        next_attacker, next_attacker_value = attackers[current_attacker_color].pop(0)
+
+        # Add the captured value to the gains array
+        gains[current_depth] = -gains[current_depth - 1] + next_attacker_value
+
+        # Switch to the other side
+        current_attacker_color = opponent_color if current_attacker_color == attacker_color else attacker_color
+        current_depth += 1
+
+    # Compute the SEE score
+    while current_depth > 1:
+        current_depth -= 1
+        gains[current_depth - 1] = min(gains[current_depth - 1], -gains[current_depth])
+
+    return gains[0]

@@ -313,6 +313,13 @@ class ChessBoard:
                         min_max_multiplier = 1 if piece.color == PlayerColor.WHITE else -1
                         score += added_score * min_max_multiplier # multiply by -1 if player is black
 
+                        mobility = len(piece.get_possible_moves(self)) * 0.2
+                        added_score += mobility
+
+        if self.is_king_in_check(PlayerColor.WHITE):
+            score -= 10
+        elif self.is_king_in_check(PlayerColor.BLACK):
+            score += 10
         return score
 
     def __hash__(self):
