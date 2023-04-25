@@ -53,6 +53,9 @@ class Pawn(ChessPiece):
 
         return moves
 
+    def to_str(self):
+        return "Pawn"
+
     def __str__(self):
         return f"<{self.color.value.title()} Pawn at {position_to_string(self.position)}>"
         

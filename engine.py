@@ -5,6 +5,7 @@ import time
 
 from chess_board import ChessBoard, Position
 from pieces.chess_piece import ChessPiece, PlayerColor
+from util import string_to_position, position_to_string
 
 
 def minimax(
@@ -16,7 +17,9 @@ def minimax(
         beta: float = float('inf'),
         cache: Optional[dict[str, tuple[Optional[ChessPiece], Optional[Position], int]]] = None,
         start_time: time = None,
-        time_limit: time = None
+        time_limit: time = None,
+        # lmr_move_count: how many moves to do full depth search, rest do shallower search
+        lmr_move_count: int = 50,
     ) -> Tuple[Optional[ChessPiece], Optional[Position], int]:
     """
     Minimax algorithm with alpha-beta pruning for the chess AI
@@ -39,6 +42,8 @@ def minimax(
 
     board_key = hash(board_state)
     if board_key in cache and depth == cache[board_key][2]:
+        print(f'board key {board_key}')
+        print(cache[board_key])
         return cache[board_key]
 
     elapsed_time = time.time() - start_time
@@ -65,22 +70,46 @@ def minimax(
         possible_moves.sort(key=lambda move: move_score(move, board_state), reverse=True)
 
         # Iterate over the ordered moves
-        for piece, move in possible_moves:
+        for move_num, (piece, move) in enumerate(possible_moves):
             # create a new board and move the piece
             new_board = deepcopy(board_state)
             new_piece = deepcopy(piece)
             new_board.move_piece(new_piece, move)
             
-            # recursive call with depth - 1 and switched player
+            # Late Move Reductions
+            reduction = 1 if move_num <= lmr_move_count else 3
             _, _, score = minimax(
+                board_state=new_board, 
+                depth=depth - reduction, 
+                maximizing_player=False, 
+                player_color=player_color, 
+                alpha=alpha, 
+                beta=beta, 
+                cache = cache,
+                start_time=start_time, 
+                time_limit=time_limit)
+            
+            if reduction == 3 and score > alpha:
+                piece, move, score = minimax(
                 board_state=new_board, 
                 depth=depth - 1, 
                 maximizing_player=False, 
                 player_color=player_color, 
                 alpha=alpha, 
                 beta=beta, 
+                cache=cache,
                 start_time=start_time, 
                 time_limit=time_limit)
+            # recursive call with depth - 1 and switched player
+            # _, _, score = minimax(
+            #     board_state=new_board, 
+            #     depth=depth - 1, 
+            #     maximizing_player=False, 
+            #     player_color=player_color, 
+            #     alpha=alpha, 
+            #     beta=beta, 
+            #     start_time=start_time, 
+            #     time_limit=time_limit)
 
             # update best move if a better score is found
             if score > max_score:
@@ -104,22 +133,48 @@ def minimax(
         # Sort the moves based on their scores
         possible_moves.sort(key=lambda move: move_score(move, board_state), reverse=False)
 
-        for piece, move in possible_moves:
+        for move_num, (piece, move) in enumerate(possible_moves):
             # create a new board and move the piece
             new_board = deepcopy(board_state)
             new_piece = deepcopy(piece)
             new_board.move_piece(new_piece, move)
 
-            # recursive call with depth - 1 and switched player
+            # Late Move Reductions
+            reduction = 1 if move_num <= lmr_move_count else 3
             _, _, score = minimax(
+                board_state=new_board, 
+                depth=depth - reduction, 
+                maximizing_player=True, 
+                player_color=opponent_color, 
+                alpha=alpha, 
+                beta=beta, 
+                cache = cache,
+                start_time=start_time, 
+                time_limit=time_limit)
+            
+            if reduction == 3 and score < beta:
+                piece, move, score = minimax(
                 board_state=new_board, 
                 depth=depth - 1, 
                 maximizing_player=True, 
                 player_color=opponent_color, 
                 alpha=alpha, 
                 beta=beta, 
+                cache = cache,
                 start_time=start_time, 
                 time_limit=time_limit)
+            # elif reduction == 1:
+
+            # # recursive call with depth - 1 and switched player
+            # _, _, score = minimax(
+            #     board_state=new_board, 
+            #     depth=depth - 1, 
+            #     maximizing_player=True, 
+            #     player_color=opponent_color, 
+            #     alpha=alpha, 
+            #     beta=beta, 
+            #     start_time=start_time, 
+            #     time_limit=time_limit)
 
             # update best move if a lower score is found
             if score < min_score:
@@ -148,13 +203,15 @@ def iterative_deepening_minimax(
     best_piece, best_move, best_score = None, None, -float('inf') if maximizing_player else float('inf')
 
     for current_depth in range(1, max_depth + 1):
+        print(f"Depth: {current_depth}")
         piece, move, score = minimax(
             board_state=board_state, 
             depth=current_depth, 
             maximizing_player=maximizing_player, 
             player_color=player_color, 
             start_time=start_time, 
-            time_limit=time_limit)
+            time_limit=time_limit
+            )
 
         if maximizing_player and score > best_score:
             best_piece, best_move, best_score = piece, move, score
@@ -164,6 +221,7 @@ def iterative_deepening_minimax(
         # check if time limit has been reached and break if so
         elapsed_time = time.time() - start_time
         if elapsed_time >= time_limit:
+            print(f"Depth: {current_depth} - Time Limit Reached")
             break
 
     return best_piece, best_move, best_score
@@ -180,6 +238,42 @@ def get_random_move(board_state: ChessBoard, color: PlayerColor) -> Tuple[ChessP
         return None, None
 
     return random.choice(possible_moves)
+
+
+sicilian_defense = [("Pawn", "C7", "C5"), ("Pawn", "D7", "D6")]
+carokann_defense = [("Pawn", "C7", "C6"), ("Pawn", "D7", "D5")]
+slav_defense = [("Pawn", "D7", "D5"), ("Pawn", "C7", "C6")]
+
+book_moves_black = {
+    ("Pawn", "E2", "E4"): {
+        "sicilian": sicilian_defense,
+        "caro-kann": carokann_defense
+    },
+    ("Pawn", "D2", "D4"): {
+        "slav": slav_defense,
+    },
+}
+
+def get_book_move_black(board_state: ChessBoard) -> Tuple[str, Position, Position]:
+    moves = board_state.get_moves()
+    turn = len(moves) // 2
+
+    if len(moves) == 0 or turn > 1:
+        return None, None, None
+
+    white_opening = moves[0]
+    
+    # if white starts with a popular opening, choose the appropriate defense
+    if white_opening in book_moves_black:
+        random_book_opening = random.choice(book_moves_black[white_opening])
+        move = book_moves_black[white_opening][random_book_opening][turn]
+    # arbitrarily pick the caro kann defense
+    else:
+        move = carokann_defense[turn]
+
+    piece_str, src_str, dest_str = move
+    return piece_str, string_to_position(src_str), string_to_position(dest_str) 
+
 
 
 def move_score(move: Tuple[ChessPiece, Position], board_state: ChessBoard) -> int:
@@ -214,8 +308,15 @@ def move_score(move: Tuple[ChessPiece, Position], board_state: ChessBoard) -> in
 
 
 def get_best_move(board_state: ChessBoard, color: PlayerColor, max_depth: int = None, max_time: int = None) -> Tuple[ChessPiece, Position]:
-    time_limit = 10  # time limit in secondsz
+    time_limit = max_time  # time limit in seconds
     max_depth = max_depth
+
+    if color == PlayerColor.BLACK:
+        book_move = get_book_move_black(board_state)
+        piece_str, start_pos, end_pos = book_move
+        if piece_str is not None:
+            piece = board_state.get_piece(start_pos)
+            return piece, end_pos
 
     piece, move, _ = iterative_deepening_minimax(
         board_state=board_state,

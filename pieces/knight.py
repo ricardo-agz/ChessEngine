@@ -33,5 +33,8 @@ class Knight(ChessPiece):
 
         return moves
 
+    def to_str(self):
+        return "Knight"
+
     def __str__(self):
         return f"<{self.color.value.title()} Knight at {position_to_string(self.position)}>"

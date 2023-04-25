@@ -42,5 +42,8 @@ class Bishop(ChessPiece):
 
         return moves
 
+    def to_str(self):
+        return "Bishop"
+
     def __str__(self):
         return f"<{self.color.value.title()} Bishop at {position_to_string(self.position)}>"
