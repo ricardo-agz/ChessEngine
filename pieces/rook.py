@@ -13,6 +13,7 @@ class Rook(ChessPiece):
     def __init__(self, color: PlayerColor, position: Position):
         super().__init__(color, position)
         self.value = 5
+        self.has_moved = False
 
     def get_possible_moves(self, board: "ChessBoard") -> list[Position]:
         moves = []
@@ -37,8 +38,10 @@ class Rook(ChessPiece):
                         break
                 else:
                     break
-
         return moves
+
+    def has_moved(self):
+        return self.has_moved
 
     def to_str(self):
         return "Rook"

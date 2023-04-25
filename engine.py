@@ -304,6 +304,9 @@ def move_score(move: Tuple[ChessPiece, Position], board_state: ChessBoard) -> in
     mobility = len(new_piece.get_possible_moves(new_board))
     score += mobility
 
+    if piece.color == PlayerColor.BLACK:
+        score = -score
+    score += new_board.evaluation_function()
     return score
 
 

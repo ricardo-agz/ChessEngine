@@ -13,6 +13,7 @@ class King(ChessPiece):
     def __init__(self, color: PlayerColor, position: Position):
         super().__init__(color, position)
         self.value = 0
+        self.has_moved = False
 
     def get_possible_moves(self, board: "ChessBoard") -> list[Position]:
         moves = []
@@ -31,7 +32,21 @@ class King(ChessPiece):
                 board.is_opponent_piece(self.color, (new_row, new_col)):
                         moves.append((new_row, new_col))
 
+
+        # Castling
+        # if not self.has_moved and not board.is_king_in_check(self.color):
+        #     row = 0 if self.color == PlayerColor.WHITE else 7
+        #      # Check kingside castling
+        #     if board.can_castle_kingside(self.color):
+        #         moves.append((row, 6))
+
+        #     # Check queenside castling
+        #     if board.can_castle_queenside(self.color):
+        #         moves.append((row, 2))
         return moves
+
+    def has_moved(self):
+        return self.has_moved
 
     def to_str(self):
         return "King"

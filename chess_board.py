@@ -1,4 +1,4 @@
-from copy import deepcopy
+from copy import copy, deepcopy
 from typing import Optional
 
 from pieces import ChessPiece, PlayerColor, Rook, Knight, Bishop, King, Queen, Pawn
@@ -94,12 +94,40 @@ class ChessBoard:
         valid_moves = []
         pieces = self.get_pieces(color)
 
+        king_moves = []
         for piece in pieces:
             possible_moves = piece.get_possible_moves(self)
             valid_piece_moves = [move for move in possible_moves if self.is_move_valid(piece, move)]
+
+            # Handle castling moves for King
+            if isinstance(piece, King) and not piece.has_moved and not self.is_king_in_check(color):
+                if self.can_castle_kingside(color):
+                    valid_piece_moves.append((piece.position[0], 6))
+                if self.can_castle_queenside(color):
+                    valid_piece_moves.append((piece.position[0], 2))
+
             valid_moves.append((piece, valid_piece_moves))
 
         return valid_moves
+        # for piece in pieces:
+        #     possible_moves = piece.get_possible_moves(self)
+        #     valid_piece_moves = [move for move in possible_moves if self.is_move_valid(piece, move)]
+        #     if isinstance(piece, King):
+        #         king_moves = valid_piece_moves
+        #                 # Handle castling moves for King
+        #     if piece.has_moved and not self.is_king_in_check(color):
+        #         if self.can_castle_kingside(color):
+        #             valid_piece_moves.append((piece.position[0], 6))
+        #         if self.can_castle_queenside(color):
+        #             valid_piece_moves.append((piece.position[0], 2))
+        #         king_moves.extend(valid_piece_moves)
+        #     valid_moves.append((piece, valid_piece_moves))
+        
+
+        
+        # valid_moves.append((piece, valid_piece_moves))
+
+        # return valid_moves
 
     def move_piece(self, piece: ChessPiece, new_position: Position) -> bool:
         """
@@ -125,10 +153,39 @@ class ChessBoard:
         # record move
         self.moves.append((piece.to_str(), piece.position, new_position))
 
+        # Move the piece
         self.board[old_row][old_col] = None
         self.board[new_row][new_col] = piece
         piece.position = new_position
 
+        # If Castle move: Move the Rook as well
+        if isinstance(piece, King) and not piece.has_moved and abs(old_col - new_col) == 2:
+            # Castling kingside
+            if new_col > old_col:
+                rook = self.get_piece((old_row, 7))
+                if rook is not None and not rook.has_moved:
+                    self.board[old_row][7] = None
+                    self.board[old_row][5] = rook
+                    rook.position = (old_row, 5)
+                    rook.has_moved = True
+                else:
+                    print("Illegal move:/")
+                    return False
+            # Castling queenside
+            else:
+                rook = self.get_piece((old_row, 0))
+                if rook is not None and not rook.has_moved:
+                    self.board[old_row][0] = None
+                    self.board[old_row][3] = rook
+                    rook.position = (old_row, 3)
+                    rook.has_moved = True
+                else:
+                    print("Illegal move:/")
+                    return False
+        
+        # Castling Purposes: If piece=King or Rook, set has_moved to True
+        if isinstance(piece, King) or isinstance(piece, Rook):
+            piece.has_moved = True
         return True
 
     def get_opponent_possible_moves_without_check(self, color: PlayerColor) -> list[Position]:
@@ -267,3 +324,53 @@ class ChessBoard:
     def __hash__(self):
         # Use a tuple of tuples containing the board state as the hash input
         return hash(tuple(tuple(self.board[row][col] for col in range(8)) for row in range(8)))
+
+    def can_castle_kingside(self, color: PlayerColor) -> bool:
+            
+            row = 7 if color == PlayerColor.WHITE else 0
+            king = self.get_piece((row, 4))
+            rook = self.get_piece((row, 7))
+            if not isinstance(king, King) or king.has_moved:
+                return False
+            if not isinstance(rook, Rook) or rook.has_moved:
+                return False
+            
+            # Check if squares between king and rook are empty
+            for col in range(5, 7):
+                if not self.is_square_empty((row, col)):
+                    return False
+
+            # Check if squares king moves through are not attacked
+            opponent_possible_moves = self.get_opponent_possible_moves_without_check(color)
+            for col in range(4, 8):
+                if (row, col) in opponent_possible_moves:
+                    return False
+            return True
+    
+    def can_castle_queenside(self, color: PlayerColor) -> bool:
+            row = 7 if color == PlayerColor.WHITE else 0
+            king = self.get_piece((row, 4))
+            rook = self.get_piece((row, 0))
+            if not isinstance(king, King) or king.has_moved:
+                return False
+            if not isinstance(rook, Rook) or rook.has_moved:
+                return False
+            
+            # Check if squares between king and rook are empty
+            for col in range(1, 3+1):
+                if not self.is_square_empty((row, col)):
+                    return False
+
+            # Check if squares king moves through are not attacked
+            opponent_possible_moves = self.get_opponent_possible_moves_without_check(color)
+            for col in range(0, 4+1):
+                if (row, col) in opponent_possible_moves:
+                    return False
+            return True  
+    
+
+    def __deepcopy__(self, memo):
+        new_board = ChessBoard()
+        new_board.board = deepcopy(self.board, memo)
+        new_board.moves = copy(self.moves)
+        return new_board
