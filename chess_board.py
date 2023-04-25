@@ -233,34 +233,28 @@ class ChessBoard:
                 for col in range(8):
                     piece = self.get_piece((row, col))
                     if piece is not None:
-                        if piece.color == PlayerColor.WHITE:
-                            score += piece.value
-                            if isinstance(piece, Pawn):
-                                score += pst_pawn[row][col]
-                            elif isinstance(piece, Knight):
-                                score += pst_knight[row][col]
-                            elif isinstance(piece, Bishop):
-                                score += pst_bishop[row][col]
-                            elif isinstance(piece, Rook):
-                                score += pst_rook[row][col]
-                            elif isinstance(piece, Queen):
-                                score += pst_queen[row][col]
-                            elif isinstance(piece, King):
-                                score += pst_king[row][col]
-                        else:
-                            score -= piece.value
-                            if isinstance(piece, Pawn):
-                                score -= pst_pawn[7-row][col]
-                            elif isinstance(piece, Knight):
-                                score -= pst_knight[7-row][col]
-                            elif isinstance(piece, Bishop):
-                                score -= pst_bishop[7-row][col]
-                            elif isinstance(piece, Rook):
-                                score -= pst_rook[7-row][col]
-                            elif isinstance(piece, Queen):
-                                score -= pst_queen[7-row][col]
-                            elif isinstance(piece, King):
-                                score -= pst_king[7-row][col]
+                        row_flip = row if piece.color == PlayerColor.WHITE else 7-row
+
+                        # calculate a multiplier based on the position of the piece
+                        position_score = 0
+                        if isinstance(piece, Pawn):
+                            position_score += pst_pawn[row_flip][col]
+                        elif isinstance(piece, Knight):
+                            position_score += pst_knight[row_flip][col]
+                        elif isinstance(piece, Bishop):
+                            position_score += pst_bishop[row_flip][col]
+                        elif isinstance(piece, Rook):
+                            position_score += pst_rook[row_flip][col]
+                        elif isinstance(piece, Queen):
+                            position_score += pst_queen[row_flip][col]
+                        elif isinstance(piece, King):
+                            position_score += pst_king[row_flip][col]
+                        
+                        position_multiple = (position_score + 100) / 100
+                        added_score = piece.value * 10 * position_multiple
+
+                        min_max_multiplier = 1 if piece.color == PlayerColor.WHITE else -1
+                        score += added_score * min_max_multiplier # multiply by -1 if player is black
 
         return score
 
