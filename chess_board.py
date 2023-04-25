@@ -258,3 +258,7 @@ class ChessBoard:
 
         print(f"evaluation score: {score}")
         return score
+
+    def __hash__(self):
+        # Use a tuple of tuples containing the board state as the hash input
+        return hash(tuple(tuple(self.board[row][col] for col in range(8)) for row in range(8)))
