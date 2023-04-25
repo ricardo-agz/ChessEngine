@@ -15,6 +15,8 @@ class ChessBoard:
         else:
             self.board = board_state
 
+        self.moves = []
+
     def create_empty_board(self) -> list[list[Optional[ChessPiece]]]:
         """Create an empty 8x8 chess board"""
         return [[None] * 8 for _ in range(8)]
@@ -30,6 +32,10 @@ class ChessBoard:
             self.board[7][i] = Piece(PlayerColor.WHITE, (7, i))
             self.board[1][i] = Pawn(PlayerColor.BLACK, (1, i))
             self.board[6][i] = Pawn(PlayerColor.WHITE, (6, i))
+
+    def get_moves(self):
+        """Returns list of all moves already made"""
+        return self.moves
 
     def is_square_empty(self, position: Position) -> bool:
         """
