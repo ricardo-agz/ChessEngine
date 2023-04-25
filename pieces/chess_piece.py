@@ -19,3 +19,6 @@ class ChessPiece:
 
     def get_possible_moves(self, board: "ChessBoard") -> list[Position]:
         pass
+
+    def to_str(self) -> str:
+        pass

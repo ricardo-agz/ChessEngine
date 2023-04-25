@@ -40,5 +40,8 @@ class Rook(ChessPiece):
 
         return moves
 
+    def to_str(self):
+        return "Rook"
+
     def __str__(self):
         return f"<{self.color.value.title()} Rook at {position_to_string(self.position)}>"

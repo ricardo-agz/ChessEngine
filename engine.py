@@ -5,6 +5,7 @@ import time
 
 from chess_board import ChessBoard, Position
 from pieces.chess_piece import ChessPiece, PlayerColor
+from util import string_to_position, position_to_string
 
 
 def minimax(
@@ -79,6 +80,7 @@ def minimax(
                 player_color=player_color, 
                 alpha=alpha, 
                 beta=beta, 
+                cache=cache,
                 start_time=start_time, 
                 time_limit=time_limit)
 
@@ -118,6 +120,7 @@ def minimax(
                 player_color=opponent_color, 
                 alpha=alpha, 
                 beta=beta, 
+                cache=cache,
                 start_time=start_time, 
                 time_limit=time_limit)
 
@@ -148,6 +151,7 @@ def iterative_deepening_minimax(
     best_piece, best_move, best_score = None, None, -float('inf') if maximizing_player else float('inf')
 
     for current_depth in range(1, max_depth + 1):
+        print(f"Depth: {current_depth}")
         piece, move, score = minimax(
             board_state=board_state, 
             depth=current_depth, 
@@ -182,6 +186,42 @@ def get_random_move(board_state: ChessBoard, color: PlayerColor) -> Tuple[ChessP
     return random.choice(possible_moves)
 
 
+sicilian_defense = [("Pawn", "C7", "C5"), ("Pawn", "D7", "D6")]
+carokann_defense = [("Pawn", "C7", "C6"), ("Pawn", "D7", "D5")]
+slav_defense = [("Pawn", "D7", "D5"), ("Pawn", "C7", "C6")]
+
+book_moves_black = {
+    ("Pawn", "E2", "E4"): {
+        "sicilian": sicilian_defense,
+        "caro-kann": carokann_defense
+    },
+    ("Pawn", "D2", "D4"): {
+        "slav": slav_defense,
+    },
+}
+
+def get_book_move_black(board_state: ChessBoard) -> Tuple[str, Position, Position]:
+    moves = board_state.get_moves()
+    turn = len(moves) // 2
+
+    if len(moves) == 0 or turn > 1:
+        return None, None, None
+
+    white_opening = moves[0]
+    
+    # if white starts with a popular opening, choose the appropriate defense
+    if white_opening in book_moves_black:
+        random_book_opening = random.choice(book_moves_black[white_opening])
+        move = book_moves_black[white_opening][random_book_opening][turn]
+    # arbitrarily pick the caro kann defense
+    else:
+        move = carokann_defense[turn]
+
+    piece_str, src_str, dest_str = move
+    return piece_str, string_to_position(src_str), string_to_position(dest_str) 
+
+
+
 def move_score(move: Tuple[ChessPiece, Position], board_state: ChessBoard) -> int:
     piece, target_position = move
     target_piece = board_state.get_piece(target_position)
@@ -214,8 +254,15 @@ def move_score(move: Tuple[ChessPiece, Position], board_state: ChessBoard) -> in
 
 
 def get_best_move(board_state: ChessBoard, color: PlayerColor, max_depth: int = None, max_time: int = None) -> Tuple[ChessPiece, Position]:
-    time_limit = 10  # time limit in secondsz
+    time_limit = max_time  # time limit in secondsz
     max_depth = max_depth
+
+    if color == PlayerColor.BLACK:
+        book_move = get_book_move_black(board_state)
+        piece_str, start_pos, end_pos = book_move
+        if piece_str is not None:
+            piece = board_state.get_piece(start_pos)
+            return piece, end_pos
 
     piece, move, _ = iterative_deepening_minimax(
         board_state=board_state,

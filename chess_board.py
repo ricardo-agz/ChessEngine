@@ -33,7 +33,7 @@ class ChessBoard:
             self.board[1][i] = Pawn(PlayerColor.BLACK, (1, i))
             self.board[6][i] = Pawn(PlayerColor.WHITE, (6, i))
 
-    def get_moves(self):
+    def get_moves(self) -> list[tuple[str, Position, Position]]:
         """Returns list of all moves already made"""
         return self.moves
 
@@ -121,6 +121,9 @@ class ChessBoard:
 
         old_row, old_col = piece.position
         new_row, new_col = new_position
+
+        # record move
+        self.moves.append((piece.to_str(), piece.position, new_position))
 
         self.board[old_row][old_col] = None
         self.board[new_row][new_col] = piece
@@ -226,14 +229,12 @@ class ChessBoard:
             return -float("infinity")
         else:
             score = 0
-            print(f"init score: {score}")
             for row in range(8):
                 for col in range(8):
                     piece = self.get_piece((row, col))
                     if piece is not None:
                         if piece.color == PlayerColor.WHITE:
                             score += piece.value
-                            print(f"added value score: {score}")
                             if isinstance(piece, Pawn):
                                 score += pst_pawn[row][col]
                             elif isinstance(piece, Knight):
@@ -248,7 +249,6 @@ class ChessBoard:
                                 score += pst_king[row][col]
                         else:
                             score -= piece.value
-                            print(f"minus value score: {score}")
                             if isinstance(piece, Pawn):
                                 score -= pst_pawn[7-row][col]
                             elif isinstance(piece, Knight):
@@ -262,7 +262,6 @@ class ChessBoard:
                             elif isinstance(piece, King):
                                 score -= pst_king[7-row][col]
 
-        print(f"evaluation score: {score}")
         return score
 
     def __hash__(self):
