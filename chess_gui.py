@@ -12,10 +12,23 @@ class ChessGUI(tk.Tk):
         self.selected_piece: Optional[Position] = None
         self.current_player = PlayerColor.WHITE
 
+        # self.window = tk.Tk()
+        # self.window.title("Chess")
+        # self.canvas = tk.Canvas(self.window, width=640, height=640)
+        # self.canvas.pack()
+
         self.window = tk.Tk()
         self.window.title("Chess")
-        self.canvas = tk.Canvas(self.window, width=640, height=640)
-        self.canvas.pack()
+
+        self.frame = tk.Frame(self.window)
+        self.frame.pack()
+
+        self.canvas = tk.Canvas(self.frame, width=640, height=640)
+        self.canvas.pack(side=tk.LEFT)
+
+        self.move_history = tk.Text(self.frame, width=30, height=40)
+        self.move_history.pack(side=tk.RIGHT, fill=tk.BOTH)
+
 
         self.canvas.bind("<Button-1>", self.on_tile_click)
 
@@ -96,6 +109,11 @@ class ChessGUI(tk.Tk):
                         self.refresh_board()
                         self.switch_player()
 
+                        # Update move history
+                        move_text = f"White: {self.board.moves[-1]}\n"
+                        self.move_history.insert(tk.END, move_text)
+                        # self.move_history.see(tk.END)
+
                         if self.current_player == PlayerColor.BLACK:
                             threading.Thread(target=self.play_black_move).start()
                     else:
@@ -109,6 +127,11 @@ class ChessGUI(tk.Tk):
         if best_move:
             self.board.move_piece(best_piece, best_move)
             self.window.after(0, self.refresh_board_and_switch_player)
+
+            # Update move history
+            move_text = f"{self.current_player.name.capitalize()}: {self.board.moves[-1]}\n"
+            self.move_history.insert(tk.END, move_text)
+
         print(f"board score: {self.board.evaluation_function()}")
 
     def refresh_board_and_switch_player(self):
