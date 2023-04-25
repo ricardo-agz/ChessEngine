@@ -104,11 +104,12 @@ class ChessGUI(tk.Tk):
 
     def play_black_move(self):
         print("getting black move...")
-        best_piece, best_move = get_best_move(self.board, PlayerColor.BLACK, max_depth=5, max_time=15)
+        best_piece, best_move = get_best_move(self.board, PlayerColor.BLACK, max_depth=5, max_time=20)
         print(f"best move: {best_piece}, {best_move}")
         if best_move:
             self.board.move_piece(best_piece, best_move)
             self.window.after(0, self.refresh_board_and_switch_player)
+        print(f"board score: {self.board.evaluation_function()}")
 
     def refresh_board_and_switch_player(self):
         self.refresh_board()

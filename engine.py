@@ -18,7 +18,6 @@ def minimax(
         cache: Optional[dict[str, tuple[Optional[ChessPiece], Optional[Position], int]]] = None,
         start_time: time = None,
         time_limit: time = None,
-        # lmr_move_count: how many moves to do full depth search, rest do shallower search
         lmr_move_count: int = 50,
     ) -> Tuple[Optional[ChessPiece], Optional[Position], int]:
     """
@@ -32,7 +31,7 @@ def minimax(
         alpha (float, optional): Alpha value for alpha-beta pruning. Defaults to -float('inf').
         beta (float, optional): Beta value for alpha-beta pruning. Defaults to float('inf').
         cache (Optional[dict[str, tuple[Optional[ChessPiece], Optional[Position], int]]], optional): A dictionary to store previously computed board evaluations. Defaults to None.
-
+        lmr_move_count (int): how many moves to do full depth search, rest do shallower search
     Returns:
         Tuple[Optional[ChessPiece], Optional[Position], int]: Best piece, best move, and score of the best move.
     """
@@ -82,7 +81,7 @@ def minimax(
                 board_state=new_board, 
                 depth=depth - reduction, 
                 maximizing_player=False, 
-                player_color=player_color, 
+                player_color=opponent_color, 
                 alpha=alpha, 
                 beta=beta, 
                 cache = cache,
@@ -94,22 +93,12 @@ def minimax(
                 board_state=new_board, 
                 depth=depth - 1, 
                 maximizing_player=False, 
-                player_color=player_color, 
+                player_color=opponent_color, 
                 alpha=alpha, 
                 beta=beta, 
                 cache=cache,
                 start_time=start_time, 
                 time_limit=time_limit)
-            # recursive call with depth - 1 and switched player
-            # _, _, score = minimax(
-            #     board_state=new_board, 
-            #     depth=depth - 1, 
-            #     maximizing_player=False, 
-            #     player_color=player_color, 
-            #     alpha=alpha, 
-            #     beta=beta, 
-            #     start_time=start_time, 
-            #     time_limit=time_limit)
 
             # update best move if a better score is found
             if score > max_score:
@@ -117,10 +106,10 @@ def minimax(
                 best_move = move
                 best_piece = piece
 
-            # update alpha and prune if beta <= alpha
+            # Update alpha and prune if beta <= alpha only after the full depth search
             alpha = max(alpha, max_score)
             if beta <= alpha:
-                return best_piece, best_move, max_score
+                break
 
         cache[board_key] = best_piece, best_move, max_score
         return best_piece, best_move, max_score
@@ -131,7 +120,7 @@ def minimax(
         possible_moves = [(piece, move) for piece, moves in board_state.get_possible_moves(player_color) for move in moves]
 
         # Sort the moves based on their scores
-        possible_moves.sort(key=lambda move: move_score(move, board_state), reverse=False)
+        possible_moves.sort(key=lambda move: move_score(move, board_state), reverse=True)
 
         for move_num, (piece, move) in enumerate(possible_moves):
             # create a new board and move the piece
@@ -163,18 +152,6 @@ def minimax(
                 cache = cache,
                 start_time=start_time, 
                 time_limit=time_limit)
-            # elif reduction == 1:
-
-            # # recursive call with depth - 1 and switched player
-            # _, _, score = minimax(
-            #     board_state=new_board, 
-            #     depth=depth - 1, 
-            #     maximizing_player=True, 
-            #     player_color=opponent_color, 
-            #     alpha=alpha, 
-            #     beta=beta, 
-            #     start_time=start_time, 
-            #     time_limit=time_limit)
 
             # update best move if a lower score is found
             if score < min_score:
@@ -185,7 +162,7 @@ def minimax(
             # update beta and prune if beta <= alpha
             beta = min(beta, min_score)
             if beta <= alpha:
-                return best_piece, best_move, min_score
+                break
 
         cache[board_key] = best_piece, best_move, min_score
         return best_piece, best_move, min_score
@@ -324,7 +301,7 @@ def get_best_move(board_state: ChessBoard, color: PlayerColor, max_depth: int = 
     piece, move, _ = iterative_deepening_minimax(
         board_state=board_state,
         max_depth=max_depth,
-        maximizing_player=True,
+        maximizing_player=False,
         player_color=color,
         time_limit=time_limit,
     )
