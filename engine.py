@@ -202,9 +202,11 @@ def iterative_deepening_minimax(
             print(f"Search at depth = {current_depth} was terminated")
             best_score = depth_move_scores[-1][2]
             terminated_search_best_score = score
+            
             if maximizing_player and terminated_search_best_score > best_score:
                 print(f"Explored move is better than best move at previous depth... {piece}, {move}, {score}")
                 depth_move_scores.append((piece, move, score))
+
             elif not maximizing_player and terminated_search_best_score < best_score:
                 print(f"Explored move is better than best move at previous depth... {piece}, {move}, {score}")
                 depth_move_scores.append((piece, move, score))
