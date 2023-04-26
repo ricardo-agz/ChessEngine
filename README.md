@@ -25,6 +25,6 @@ To speed up the minimax search, we implemented a variety of methods/techniques:
 
 # Instructions to Run ChessEngine
 - Download/clone repository
-- Run python chess_gui.py
+- Run command `python chess_gui.py`
 - Make moves and play against the ChessEngine
 
