@@ -1,7 +1,6 @@
 # ChessEngine
 
-An overview of what you have completed in the final project
-This is a ChessEngine made with the minimax algorithm. Black is played by the ChessEngine. 
+This is a ChessEngine implemented with the minimax algorithm. Black is played by the ChessEngine. 
 Premise of Minimax:
 - Explore all my possible moves, try to maximize my score
 - For each of my moves, explore all the opponents’ possible moves (assume they play optimally)
@@ -16,14 +15,14 @@ To speed up the minimax search, we implemented a variety of methods/techniques:
 - Late Move Reduction
 - Book Openings
 
-File Structure
+#File Structure
 - Pieces Folder contains python classes for each piece
 - chess_board.py contains board and move logic
 - chess_gui.py contains the GUI
 - engine.py contains the minimax algorithm
 - piece_square_tables.py contains the position points 
 
-Instructions to Run ChessEngine
+#Instructions to Run ChessEngine
 - Download/clone repository
 - Run python chess_gui.py
 - Make moves and play against the ChessEngine
