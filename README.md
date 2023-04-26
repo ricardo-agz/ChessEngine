@@ -17,7 +17,9 @@ To speed up the minimax search, we implemented a variety of methods/techniques:
 - Alpha-beta pruning
 - Iterative deepening minimax
 - Move ordering
-- Late Move Reduction
+  - Assigning Move Scores
+  - Late Move Reduction
+  - Static Exchange Evaluation
 - Book Openings
 
 # File Structure
