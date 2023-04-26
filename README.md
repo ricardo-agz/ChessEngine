@@ -1,6 +1,7 @@
 # ChessEngine
 
 This is a ChessEngine implemented with the minimax algorithm. Black is played by the ChessEngine. 
+
 Presentation Link
 https://docs.google.com/presentation/d/1e-2kfJnDqCgey7RU_Q-FqPf-d-5Aqk26IF-XqMHE72s/edit#slide=id.p
 
