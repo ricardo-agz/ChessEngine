@@ -3,6 +3,7 @@
 This is a ChessEngine implemented with the minimax algorithm. Black is played by the ChessEngine. 
 Presentation Link
 https://docs.google.com/presentation/d/1e-2kfJnDqCgey7RU_Q-FqPf-d-5Aqk26IF-XqMHE72s/edit#slide=id.p
+
 Premise of Minimax:
 - Explore all my possible moves, try to maximize my score
 - For each of my moves, explore all the opponents’ possible moves (assume they play optimally)
