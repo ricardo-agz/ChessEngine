@@ -15,14 +15,14 @@ To speed up the minimax search, we implemented a variety of methods/techniques:
 - Late Move Reduction
 - Book Openings
 
-#File Structure
+# File Structure
 - Pieces Folder contains python classes for each piece
 - chess_board.py contains board and move logic
 - chess_gui.py contains the GUI
 - engine.py contains the minimax algorithm
 - piece_square_tables.py contains the position points 
 
-#Instructions to Run ChessEngine
+# Instructions to Run ChessEngine
 - Download/clone repository
 - Run python chess_gui.py
 - Make moves and play against the ChessEngine
