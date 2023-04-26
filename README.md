@@ -8,6 +8,7 @@ Premise of Minimax:
 - Return the best move leading to the leaf with the best score
 The score is determined by an evaluation function that takes into account piece points, their position on the board, and whether the king is in check.
 However, there are an exponential number of possible board states and searching through all possible moves would take a lot of time.
+
 To speed up the minimax search, we implemented a variety of methods/techniques:
 - Alpha-beta pruning
 - Iterative deepening minimax
